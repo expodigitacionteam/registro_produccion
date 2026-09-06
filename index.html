@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de producción</title>
+<style>
+  :root {
+    --navy: #1f3a5f;
+    --navy-dark: #16293f;
+    --paper: #eef1f4;
+    --line: #1f3a5f;
+    --row-alt: #f7f8fa;
+    --ok: #2f6b45;
+    --err: #a83c2f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: #22262b;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    padding: 20px 12px 60px;
+  }
+
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  @media (min-width: 900px) {
+    .wrap { max-width: 1100px; }
+
+    .form-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .frow {
+      border-right: 1px solid var(--line);
+    }
+
+    .frow:nth-child(2n) { border-right: none; }
+
+    /* Bordes inferiores solo donde hace falta para que la grilla se vea pareja */
+    .form-box .frow:nth-last-child(1),
+    .form-box .frow:nth-last-child(2) {
+      border-bottom: none;
+    }
+
+    table { font-size: 0.85rem; }
+  }
+
+  h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--navy-dark);
+    margin: 0 0 16px;
+    letter-spacing: 0.01em;
+  }
+
+  /* --- Formulario tipo tabla --- */
+  .form-box {
+    border: 2px solid var(--line);
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .frow {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .frow:last-of-type { border-bottom: none; }
+
+  .flabel {
+    width: 42%;
+    padding: 10px 12px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--navy-dark);
+    display: flex;
+    align-items: center;
+    border-right: 1px solid var(--line);
+    background: #f1f4f8;
+  }
+
+  .finput { width: 58%; }
+
+  .finput input, .finput select {
+    width: 100%;
+    height: 100%;
+    border: none;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: transparent;
+    color: #22262b;
+  }
+
+  .finput input:focus, .finput select:focus {
+    outline: 2px solid var(--navy);
+    outline-offset: -2px;
+  }
+
+  .btn-registrar {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    background: var(--navy-dark);
+    color: #fff;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+
+  .btn-registrar:hover { background: #0f1c2c; }
+  .btn-registrar:disabled { background: #9aa5b1; }
+
+  .status {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    display: none;
+  }
+  .status.ok { display: block; background: #e3efe6; color: var(--ok); }
+  .status.err { display: block; background: #f6e6e3; color: var(--err); }
+
+  /* --- Búsqueda --- */
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    margin: 28px 0 14px;
+  }
+
+  .search-bar input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    font-size: 0.9rem;
+  }
+
+  .search-bar button {
+    padding: 10px 14px;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .search-bar button.secondary {
+    background: #fff;
+    color: var(--navy-dark);
+    border: 1px solid var(--line);
+  }
+
+  /* --- Tabla de resultados --- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.78rem; min-width: 720px; }
+
+  th {
+    background: var(--navy-dark);
+    color: #fff;
+    padding: 8px 6px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 7px 6px;
+    border-bottom: 1px solid #dfe3e8;
+    white-space: nowrap;
+  }
+
+  tr:nth-child(even) td { background: var(--row-alt); }
+
+  .empty-msg {
+    padding: 16px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+
+  /* --- Login --- */
+  #loginScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-box {
+    width: 100%;
+    max-width: 340px;
+    background: #fff;
+    border: 2px solid var(--line);
+    padding: 28px 24px;
+  }
+
+  .login-box h2 {
+    margin: 0 0 4px;
+    font-size: 1.1rem;
+    color: var(--navy-dark);
+  }
+
+  .login-box .sub {
+    font-size: 0.82rem;
+    color: #6b7280;
+    margin: 0 0 20px;
+  }
+
+  .login-box label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--navy-dark);
+    font-weight: 600;
+    margin: 14px 0 5px;
+  }
+
+  .login-box input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    font-size: 0.9rem;
+  }
+
+  .login-box input:focus { outline: 2px solid var(--navy); outline-offset: -2px; }
+
+  .login-box button {
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    background: var(--navy-dark);
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+
+  .login-box button:disabled { background: #9aa5b1; }
+
+  .login-error {
+    margin-top: 12px;
+    font-size: 0.83rem;
+    color: var(--err);
+    display: none;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .topbar .user-info { font-size: 0.85rem; color: #55605c; }
+
+  .btn-logout {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--navy-dark);
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+
+  /* --- Modal administrar usuarios --- */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 28, 44, 0.55);
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+  }
+
+  .modal-box {
+    background: #fff;
+    border: 2px solid var(--line);
+    width: 100%;
+    max-width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  .modal-box h3 {
+    margin: 0 0 16px;
+    color: var(--navy-dark);
+    font-size: 1.05rem;
+  }
+
+  .modal-box label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--navy-dark);
+    margin: 12px 0 5px;
+  }
+
+  .modal-box input, .modal-box select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    font-size: 0.88rem;
+  }
+
+  .modal-box .btn-crear {
+    width: 100%;
+    margin-top: 16px;
+    padding: 11px;
+    background: var(--navy-dark);
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .modal-box .admin-msg {
+    margin-top: 10px;
+    font-size: 0.83rem;
+    display: none;
+  }
+  .modal-box .admin-msg.ok { display: block; color: var(--ok); }
+  .modal-box .admin-msg.err { display: block; color: var(--err); }
+
+  .lista-usuarios {
+    margin-top: 20px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+
+  .lista-usuarios table { width: 100%; font-size: 0.82rem; }
+  .lista-usuarios th { background: var(--navy-dark); color: #fff; padding: 6px 8px; text-align: left; }
+  .lista-usuarios td { padding: 6px 8px; border-bottom: 1px solid #dfe3e8; }
+
+  .btn-cerrar-modal {
+    margin-top: 18px;
+    width: 100%;
+    padding: 9px;
+    background: #fff;
+    border: 1px solid var(--line);
+    color: var(--navy-dark);
+    cursor: pointer;
+  }
+
+  .btn-mini {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--navy-dark);
+    cursor: pointer;
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+
+  .btn-mini.danger { border-color: var(--err); color: var(--err); }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <h2>Iniciar sesión</h2>
+    <p class="sub">Ingresa tus credenciales para acceder al registro.</p>
+
+    <form id="loginForm">
+      <label for="loginUsuario">Usuario</label>
+      <input type="text" id="loginUsuario" required>
+
+      <label for="loginContrasena">Contraseña</label>
+      <input type="password" id="loginContrasena" required>
+
+      <button type="submit" id="btnLogin">Entrar</button>
+      <div class="login-error" id="loginError">Usuario o contraseña incorrectos.</div>
+    </form>
+  </div>
+</div>
+
+<div id="appContent" style="display:none">
+<div class="wrap">
+
+  <div class="topbar">
+    <h1 style="margin:0">Registro de producción</h1>
+    <div>
+      <span class="user-info" id="userInfo"></span>
+      <button class="btn-logout" id="btnAdmin" style="display:none">Usuarios</button>
+      <button class="btn-logout" id="btnOpciones" style="display:none">Opciones</button>
+      <button class="btn-logout" id="btnCambiarPass">Cambiar contraseña</button>
+      <button class="btn-logout" id="btnLogout">Salir</button>
+    </div>
+  </div>
+
+
+  <form id="regForm">
+    <div class="form-box">
+      <div class="frow">
+        <div class="flabel">FECHA</div>
+        <div class="finput"><input type="date" id="fecha" name="fecha" required></div>
+      </div>
+      <div class="frow">
+        <div class="flabel">DIGITADOR</div>
+        <div class="finput">
+          <input type="text" id="digitadorVisible" disabled>
+          <input type="hidden" id="digitador" name="digitador">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="flabel">TURNO</div>
+        <div class="finput">
+          <select id="turno" name="turno" required>
+            <option value="">Selecciona...</option>
+            <option value="Noche">Noche</option>
+            <option value="Día">Día</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="flabel">ITEM</div>
+        <div class="finput"><input type="number" inputmode="numeric" id="item" name="item"></div>
+      </div>
+      <div class="frow">
+        <div class="flabel">TALLA</div>
+        <div class="finput">
+          <select id="talla" name="talla">
+            <option value="">Selecciona...</option>
+            <option value="U15">U15</option>
+            <option value="16/20">16/20</option>
+            <option value="21/25">21/25</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="flabel">LIBRAS</div>
+        <div class="finput">
+          <select id="libras" name="libras">
+            <option value="">Selecciona...</option>
+            <option value="40lb">40lb</option>
+            <option value="30lb">30lb</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="flabel">CANTIDAD</div>
+        <div class="finput"><input type="number" id="cantidad" name="cantidad"></div>
+      </div>
+      <div class="frow">
+        <div class="flabel">LOTE</div>
+        <div class="finput"><input type="text" id="lote" name="lote"></div>
+      </div>
+      <div class="frow">
+        <div class="flabel">AUTORIZADO POR</div>
+        <div class="finput">
+          <select id="autorizado" name="autorizado">
+            <option value="">Selecciona...</option>
+            <option value="Ana María">Ana María</option>
+            <option value="Alex Naranjo">Alex Naranjo</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="flabel">MOTIVO</div>
+        <div class="finput">
+          <select id="motivo" name="motivo">
+            <option value="">Selecciona...</option>
+            <option value="No hay material de empaque">No hay material de empaque</option>
+            <option value="Completar pedido de lbs">Completar pedido de lbs</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="flabel">OBSERVACIÓN</div>
+        <div class="finput"><input type="text" id="observacion" name="observacion"></div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-registrar" id="btnRegistrar">REGISTRAR</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <div class="search-bar">
+    <input type="text" id="buscar" placeholder="Buscar por lote, ítem, digitador...">
+    <button type="button" id="btnBuscar">Buscar</button>
+    <button type="button" class="secondary" id="btnNuevaBusqueda">Nueva búsqueda</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="tablaResultados">
+      <thead>
+        <tr>
+          <th>Fecha</th><th>Digitador</th><th>Turno</th><th>Item</th><th>Talla</th>
+          <th>Libras</th><th>Cantidad</th><th>Lote</th><th>Autorizado</th><th>Motivo</th><th>Observación</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyResultados"></tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-box">
+    <h3>Usuarios</h3>
+
+    <form id="formNuevoUsuario">
+      <label for="nuevoUsuario">Nuevo usuario</label>
+      <input type="text" id="nuevoUsuario" required>
+
+      <label for="nuevaContrasena">Contraseña</label>
+      <input type="text" id="nuevaContrasena" required>
+
+      <label for="nuevoRol">Rol</label>
+      <select id="nuevoRol">
+        <option value="digitador">Digitador</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="admin">Administrador</option>
+      </select>
+
+      <button type="submit" class="btn-crear">Crear usuario</button>
+      <div class="admin-msg" id="adminMsg"></div>
+    </form>
+
+    <div class="lista-usuarios">
+      <table>
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Acciones</th></tr></thead>
+        <tbody id="tbodyUsuarios"></tbody>
+      </table>
+    </div>
+
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarAdmin">Cerrar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="passModal">
+  <div class="modal-box">
+    <h3>Cambiar mi contraseña</h3>
+
+    <form id="formCambiarPass">
+      <label for="passActual">Contraseña actual</label>
+      <input type="password" id="passActual" required>
+
+      <label for="passNueva">Contraseña nueva</label>
+      <input type="password" id="passNueva" required>
+
+      <label for="passConfirmar">Confirmar contraseña nueva</label>
+      <input type="password" id="passConfirmar" required>
+
+      <button type="submit" class="btn-crear">Guardar contraseña</button>
+      <div class="admin-msg" id="passMsg"></div>
+    </form>
+
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarPass">Cerrar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="opcionesModal">
+  <div class="modal-box">
+    <h3>Opciones de listas</h3>
+
+    <form id="formNuevaOpcion">
+      <label for="opcionCategoria">Campo</label>
+      <select id="opcionCategoria">
+        <option value="turno">Turno</option>
+        <option value="talla">Talla</option>
+        <option value="libras">Libras</option>
+        <option value="autorizado">Autorizado por</option>
+        <option value="motivo">Motivo</option>
+      </select>
+
+      <label for="opcionValor">Nueva opción</label>
+      <input type="text" id="opcionValor" required>
+
+      <button type="submit" class="btn-crear">Agregar opción</button>
+      <div class="admin-msg" id="opcionMsg"></div>
+    </form>
+
+    <div class="lista-usuarios">
+      <table>
+        <thead><tr><th>Campo</th><th>Valor</th><th>Acciones</th></tr></thead>
+        <tbody id="tbodyOpciones"></tbody>
+      </table>
+    </div>
+
+    <button type="button" class="btn-cerrar-modal" id="btnCerrarOpciones">Cerrar</button>
+  </div>
+</div>
+
+<script>
+  // Pega aquí la URL de tu Web App de Apps Script (termina en /exec)
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx976HeNiiaAfsPDZ-RQvGrjB5oSw-q1ZoDU4zT76aEkwzwSroF8065TD-2mXaY0F8UKg/exec";
+
+  const form = document.getElementById('regForm');
+  const btn = document.getElementById('btnRegistrar');
+  const status = document.getElementById('status');
+  const tbody = document.getElementById('tbodyResultados');
+  const inputBuscar = document.getElementById('buscar');
+
+  // --- Login ---
+  const loginScreen = document.getElementById('loginScreen');
+  const appContent = document.getElementById('appContent');
+  const loginForm = document.getElementById('loginForm');
+  const btnLogin = document.getElementById('btnLogin');
+  const loginError = document.getElementById('loginError');
+  const userInfo = document.getElementById('userInfo');
+
+  let usuarioActual = null;
+  let rolActual = null;
+  let contrasenaActual = null;
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginError.style.display = 'none';
+    btnLogin.disabled = true;
+    btnLogin.textContent = 'Verificando...';
+
+    const usuario = document.getElementById('loginUsuario').value.trim();
+    const contrasena = document.getElementById('loginContrasena').value;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'login', usuario, contrasena })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        usuarioActual = data.usuario;
+        rolActual = data.rol || 'digitador';
+        contrasenaActual = contrasena;
+
+        loginScreen.style.display = 'none';
+        appContent.style.display = 'block';
+        userInfo.textContent = `${usuarioActual} (${rolActual})`;
+
+        document.getElementById('digitadorVisible').value = usuarioActual;
+        document.getElementById('digitador').value = usuarioActual;
+
+        document.getElementById('btnAdmin').style.display =
+          (rolActual === 'admin' || rolActual === 'supervisor') ? 'inline-block' : 'none';
+
+        document.getElementById('btnOpciones').style.display =
+          rolActual === 'admin' ? 'inline-block' : 'none';
+
+        form.style.display = rolActual === 'admin' ? 'none' : 'block';
+
+        cargarOpcionesSelects();
+        cargarResultados('');
+      } else {
+        loginError.textContent = 'Usuario o contraseña incorrectos.';
+        loginError.style.display = 'block';
+      }
+    } catch (err) {
+      loginError.textContent = 'No se pudo verificar. Revisa tu conexión o la SCRIPT_URL.';
+      loginError.style.display = 'block';
+    } finally {
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Entrar';
+    }
+  });
+
+  document.getElementById('btnLogout').addEventListener('click', () => {
+    appContent.style.display = 'none';
+    loginScreen.style.display = 'flex';
+    loginForm.reset();
+    usuarioActual = null;
+    rolActual = null;
+    contrasenaActual = null;
+  });
+
+  document.getElementById('fecha').valueAsDate = new Date();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.className = 'status';
+    btn.disabled = true;
+    btn.textContent = 'GUARDANDO...';
+
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(data)
+      });
+      status.textContent = 'Registro guardado correctamente.';
+      status.className = 'status ok';
+      form.reset();
+      document.getElementById('fecha').valueAsDate = new Date();
+      document.getElementById('digitadorVisible').value = usuarioActual;
+      document.getElementById('digitador').value = usuarioActual;
+      cargarResultados('');
+    } catch (err) {
+      status.textContent = 'No se pudo guardar. Revisa tu conexión.';
+      status.className = 'status err';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'REGISTRAR';
+    }
+  });
+
+  async function cargarResultados(q) {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-msg">Cargando...</td></tr>';
+    try {
+      const res = await fetch(`${SCRIPT_URL}?q=${encodeURIComponent(q)}`);
+      const filas = await res.json();
+
+      if (!filas.length) {
+        tbody.innerHTML = '<tr><td colspan="12" class="empty-msg">Sin resultados.</td></tr>';
+        return;
+      }
+
+      // Cada fila viene como: [id, fecha, digitador, turno, item, talla, libras, cantidad, lote, autorizado, motivo, observacion]
+      tbody.innerHTML = filas.map(f => `
+        <tr>
+          <td>${f[1] ?? ''}</td><td>${f[2] ?? ''}</td><td>${f[3] ?? ''}</td>
+          <td>${f[4] ?? ''}</td><td>${f[5] ?? ''}</td><td>${f[6] ?? ''}</td>
+          <td>${f[7] ?? ''}</td><td>${f[8] ?? ''}</td><td>${f[9] ?? ''}</td>
+          <td>${f[10] ?? ''}</td><td>${f[11] ?? ''}</td>
+          <td>${rolActual === 'admin' ? `<button type="button" class="btn-mini danger" onclick="eliminarRegistro('${f[0]}')">Eliminar</button>` : ''}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="12" class="empty-msg">No se pudo cargar. Configura SCRIPT_URL.</td></tr>';
+    }
+  }
+
+  async function eliminarRegistro(id) {
+    if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'eliminarRegistro',
+          adminUsuario: usuarioActual,
+          adminContrasena: contrasenaActual,
+          id
+        })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        cargarResultados(inputBuscar.value);
+      } else {
+        alert(data.error || 'No se pudo eliminar el registro.');
+      }
+    } catch (err) {
+      alert('Error de conexión al eliminar.');
+    }
+  }
+
+  document.getElementById('btnBuscar').addEventListener('click', () => cargarResultados(inputBuscar.value));
+  document.getElementById('btnNuevaBusqueda').addEventListener('click', () => {
+    inputBuscar.value = '';
+    cargarResultados('');
+  });
+
+  // --- Administrar usuarios (solo admin) ---
+  const adminModal = document.getElementById('adminModal');
+  const formNuevoUsuario = document.getElementById('formNuevoUsuario');
+  const adminMsg = document.getElementById('adminMsg');
+  const tbodyUsuarios = document.getElementById('tbodyUsuarios');
+
+  document.getElementById('btnAdmin').addEventListener('click', () => {
+    adminModal.style.display = 'flex';
+    formNuevoUsuario.style.display = rolActual === 'admin' ? 'block' : 'none';
+    cargarUsuarios();
+  });
+
+  document.getElementById('btnCerrarAdmin').addEventListener('click', () => {
+    adminModal.style.display = 'none';
+  });
+
+  async function cargarUsuarios() {
+    tbodyUsuarios.innerHTML = '<tr><td colspan="3">Cargando...</td></tr>';
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'listarUsuarios',
+          adminUsuario: usuarioActual,
+          adminContrasena: contrasenaActual
+        })
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        tbodyUsuarios.innerHTML = '<tr><td colspan="3">No autorizado.</td></tr>';
+        return;
+      }
+
+      tbodyUsuarios.innerHTML = data.usuarios.map(u => `
+        <tr>
+          <td>${u.usuario}</td><td>${u.rol}</td>
+          <td>
+            ${u.rol.toLowerCase() !== 'admin'
+              ? `<button type="button" class="btn-mini" onclick="restablecerContrasena('${u.usuario}')">Restablecer</button>`
+              : ''}
+            ${rolActual === 'admin' && u.usuario.toLowerCase() !== usuarioActual.toLowerCase()
+              ? `<button type="button" class="btn-mini danger" onclick="eliminarUsuario('${u.usuario}')">Eliminar</button>`
+              : ''}
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbodyUsuarios.innerHTML = '<tr><td colspan="3">Error al cargar.</td></tr>';
+    }
+  }
+
+  async function eliminarUsuario(usuarioAEliminar) {
+    if (!confirm(`¿Eliminar al usuario "${usuarioAEliminar}"?`)) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'eliminarUsuario',
+          adminUsuario: usuarioActual,
+          adminContrasena: contrasenaActual,
+          usuarioAEliminar
+        })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        cargarUsuarios();
+      } else {
+        alert(data.error || 'No se pudo eliminar el usuario.');
+      }
+    } catch (err) {
+      alert('Error de conexión al eliminar usuario.');
+    }
+  }
+
+  async function restablecerContrasena(usuarioObjetivo) {
+    const nueva = prompt(`Nueva contraseña para "${usuarioObjetivo}":`);
+    if (!nueva) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'restablecerContrasena',
+          adminUsuario: usuarioActual,
+          adminContrasena: contrasenaActual,
+          usuarioObjetivo,
+          nuevaContrasena: nueva
+        })
+      });
+      const data = await res.json();
+
+      alert(data.ok ? 'Contraseña restablecida correctamente.' : (data.error || 'No se pudo restablecer.'));
+    } catch (err) {
+      alert('Error de conexión al restablecer.');
+    }
+  }
+
+  formNuevoUsuario.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    adminMsg.className = 'admin-msg';
+
+    const nuevoUsuario = document.getElementById('nuevoUsuario').value.trim();
+    const nuevaContrasena = document.getElementById('nuevaContrasena').value;
+    const nuevoRol = document.getElementById('nuevoRol').value;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'crearUsuario',
+          adminUsuario: usuarioActual,
+          adminContrasena: contrasenaActual,
+          nuevoUsuario, nuevaContrasena, nuevoRol
+        })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        adminMsg.textContent = 'Usuario creado correctamente.';
+        adminMsg.className = 'admin-msg ok';
+        formNuevoUsuario.reset();
+        cargarUsuarios();
+      } else {
+        adminMsg.textContent = data.error || 'No se pudo crear el usuario.';
+        adminMsg.className = 'admin-msg err';
+      }
+    } catch (err) {
+      adminMsg.textContent = 'Error de conexión.';
+      adminMsg.className = 'admin-msg err';
+    }
+  });
+
+  // --- Cambiar mi propia contraseña ---
+  const passModal = document.getElementById('passModal');
+  const formCambiarPass = document.getElementById('formCambiarPass');
+  const passMsg = document.getElementById('passMsg');
+
+  document.getElementById('btnCambiarPass').addEventListener('click', () => {
+    passMsg.className = 'admin-msg';
+    formCambiarPass.reset();
+    passModal.style.display = 'flex';
+  });
+
+  document.getElementById('btnCerrarPass').addEventListener('click', () => {
+    passModal.style.display = 'none';
+  });
+
+  formCambiarPass.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    passMsg.className = 'admin-msg';
+
+    const actual = document.getElementById('passActual').value;
+    const nueva = document.getElementById('passNueva').value;
+    const confirmar = document.getElementById('passConfirmar').value;
+
+    if (nueva !== confirmar) {
+      passMsg.textContent = 'La confirmación no coincide con la contraseña nueva.';
+      passMsg.className = 'admin-msg err';
+      return;
+    }
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'cambiarContrasena',
+          usuario: usuarioActual,
+          contrasenaActual: actual,
+          contrasenaNueva: nueva
+        })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        contrasenaActual = nueva;
+        passMsg.textContent = 'Contraseña actualizada correctamente.';
+        passMsg.className = 'admin-msg ok';
+        formCambiarPass.reset();
+      } else {
+        passMsg.textContent = data.error || 'No se pudo cambiar la contraseña.';
+        passMsg.className = 'admin-msg err';
+      }
+    } catch (err) {
+      passMsg.textContent = 'Error de conexión.';
+      passMsg.className = 'admin-msg err';
+    }
+  });
+
+  // --- Opciones dinámicas de listas (Turno, Talla, Libras, Autorizado, Motivo) ---
+  function llenarSelect(id, valores) {
+    if (!valores || !valores.length) return;
+    const select = document.getElementById(id);
+    const actual = select.value;
+    select.innerHTML = '<option value="">Selecciona...</option>' +
+      valores.map(v => `<option value="${v}">${v}</option>`).join('');
+    select.value = actual;
+  }
+
+  async function cargarOpcionesSelects() {
+    try {
+      const res = await fetch(`${SCRIPT_URL}?opciones=1`);
+      const datos = await res.json();
+      llenarSelect('turno', datos.turno);
+      llenarSelect('talla', datos.talla);
+      llenarSelect('libras', datos.libras);
+      llenarSelect('autorizado', datos.autorizado);
+      llenarSelect('motivo', datos.motivo);
+    } catch (err) {
+      // si falla, se quedan las opciones que ya estén escritas en el HTML
+    }
+  }
+
+  const opcionesModal = document.getElementById('opcionesModal');
+  const formNuevaOpcion = document.getElementById('formNuevaOpcion');
+  const opcionMsg = document.getElementById('opcionMsg');
+  const tbodyOpciones = document.getElementById('tbodyOpciones');
+
+  document.getElementById('btnOpciones').addEventListener('click', () => {
+    opcionesModal.style.display = 'flex';
+    cargarListaOpciones();
+  });
+
+  document.getElementById('btnCerrarOpciones').addEventListener('click', () => {
+    opcionesModal.style.display = 'none';
+  });
+
+  async function cargarListaOpciones() {
+    tbodyOpciones.innerHTML = '<tr><td colspan="3">Cargando...</td></tr>';
+    try {
+      const res = await fetch(`${SCRIPT_URL}?opciones=1`);
+      const datos = await res.json();
+      const filas = [];
+      Object.keys(datos).forEach(categoria => {
+        datos[categoria].forEach(valor => filas.push({ categoria, valor }));
+      });
+
+      if (!filas.length) {
+        tbodyOpciones.innerHTML = '<tr><td colspan="3">Sin opciones registradas.</td></tr>';
+        return;
+      }
+
+      tbodyOpciones.innerHTML = filas.map(f => `
+        <tr>
+          <td>${f.categoria}</td><td>${f.valor}</td>
+          <td><button type="button" class="btn-mini danger" onclick="eliminarOpcion('${f.categoria}', '${String(f.valor).replace(/'/g, "\\'")}')">Eliminar</button></td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      tbodyOpciones.innerHTML = '<tr><td colspan="3">Error al cargar.</td></tr>';
+    }
+  }
+
+  formNuevaOpcion.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    opcionMsg.className = 'admin-msg';
+
+    const categoria = document.getElementById('opcionCategoria').value;
+    const valor = document.getElementById('opcionValor').value.trim();
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'crearOpcion',
+          adminUsuario: usuarioActual,
+          adminContrasena: contrasenaActual,
+          categoria, valor
+        })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        opcionMsg.textContent = 'Opción agregada correctamente.';
+        opcionMsg.className = 'admin-msg ok';
+        formNuevaOpcion.reset();
+        cargarListaOpciones();
+        cargarOpcionesSelects();
+      } else {
+        opcionMsg.textContent = data.error || 'No se pudo agregar.';
+        opcionMsg.className = 'admin-msg err';
+      }
+    } catch (err) {
+      opcionMsg.textContent = 'Error de conexión.';
+      opcionMsg.className = 'admin-msg err';
+    }
+  });
+
+  async function eliminarOpcion(categoria, valor) {
+    if (!confirm(`¿Eliminar la opción "${valor}"?`)) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'eliminarOpcion',
+          adminUsuario: usuarioActual,
+          adminContrasena: contrasenaActual,
+          categoria, valor
+        })
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        cargarListaOpciones();
+        cargarOpcionesSelects();
+      } else {
+        alert(data.error || 'No se pudo eliminar.');
+      }
+    } catch (err) {
+      alert('Error de conexión al eliminar.');
+    }
+  }
+</script>
+
+</body>
+</html>

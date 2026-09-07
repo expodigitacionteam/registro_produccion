@@ -657,7 +657,7 @@
         form.style.display = rolActual === 'admin' ? 'none' : 'block';
 
         cargarOpcionesSelects();
-        cargarResultados('');
+        mostrarMensajeInicial();
       } else {
         loginError.textContent = 'Usuario o contraseña incorrectos.';
         loginError.style.display = 'block';
@@ -703,7 +703,7 @@
       document.getElementById('fecha').valueAsDate = new Date();
       document.getElementById('digitadorVisible').value = usuarioActual;
       document.getElementById('digitador').value = usuarioActual;
-      cargarResultados('');
+      mostrarMensajeInicial();
     } catch (err) {
       status.textContent = 'No se pudo guardar. Revisa tu conexión.';
       status.className = 'status err';
@@ -756,7 +756,12 @@
       const data = await res.json();
 
       if (data.ok) {
-        cargarResultados(inputBuscar.value);
+        const termino = inputBuscar.value.trim();
+        if (termino) {
+          cargarResultados(termino);
+        } else {
+          mostrarMensajeInicial();
+        }
       } else {
         alert(data.error || 'No se pudo eliminar el registro.');
       }
@@ -765,10 +770,22 @@
     }
   }
 
-  document.getElementById('btnBuscar').addEventListener('click', () => cargarResultados(inputBuscar.value));
+  function mostrarMensajeInicial() {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-msg">Escribe un término y presiona "Buscar" para ver resultados.</td></tr>';
+  }
+
+  document.getElementById('btnBuscar').addEventListener('click', () => {
+    const termino = inputBuscar.value.trim();
+    if (!termino) {
+      mostrarMensajeInicial();
+      return;
+    }
+    cargarResultados(termino);
+  });
+
   document.getElementById('btnNuevaBusqueda').addEventListener('click', () => {
     inputBuscar.value = '';
-    cargarResultados('');
+    mostrarMensajeInicial();
   });
 
   // --- Administrar usuarios (solo admin) ---

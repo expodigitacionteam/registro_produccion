@@ -273,6 +273,42 @@
     margin-left: 8px;
   }
 
+  @media (max-width: 560px) {
+    .topbar {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .topbar > div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .btn-logout { margin-left: 0; flex: 1 1 auto; text-align: center; }
+    .topbar .user-info { width: 100%; }
+  }
+
+  @media (max-width: 420px) {
+    .frow { flex-direction: column; }
+
+    .flabel {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .finput { width: 100%; }
+
+    .modal-box { padding: 18px; }
+
+    .search-bar { flex-wrap: wrap; }
+    .search-bar input { flex: 1 1 100%; }
+    .search-bar button { flex: 1 1 auto; }
+  }
+
   /* --- Modal administrar usuarios --- */
   .modal-overlay {
     display: none;

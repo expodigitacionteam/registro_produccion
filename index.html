@@ -41,7 +41,6 @@
 
     .frow:nth-child(2n) { border-right: none; }
 
-    /* Bordes inferiores solo donde hace falta para que la grilla se vea pareja */
     .form-box .frow:nth-last-child(1),
     .form-box .frow:nth-last-child(2) {
       border-bottom: none;
@@ -58,7 +57,6 @@
     letter-spacing: 0.01em;
   }
 
-  /* --- Formulario tipo tabla --- */
   .form-box {
     border: 2px solid var(--line);
     background: #fff;
@@ -128,7 +126,6 @@
   .status.ok { display: block; background: #e3efe6; color: var(--ok); }
   .status.err { display: block; background: #f6e6e3; color: var(--err); }
 
-  /* --- Búsqueda --- */
   .search-bar {
     display: flex;
     gap: 8px;
@@ -159,7 +156,6 @@
     border: 1px solid var(--line);
   }
 
-  /* --- Tabla de resultados --- */
   .table-wrap { overflow-x: auto; border: 1px solid var(--line); }
 
   table { border-collapse: collapse; width: 100%; font-size: 0.78rem; min-width: 720px; }
@@ -188,7 +184,6 @@
     font-size: 0.85rem;
   }
 
-  /* --- Login --- */
   #loginScreen {
     min-height: 100vh;
     display: flex;
@@ -309,7 +304,6 @@
     .search-bar button { flex: 1 1 auto; }
   }
 
-  /* --- Modal administrar usuarios --- */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -403,6 +397,81 @@
   }
 
   .btn-mini.danger { border-color: var(--err); color: var(--err); }
+
+  #filtroPanel {
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 14px;
+    margin-top: 20px;
+  }
+
+  .filtro-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .filtro-row label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--navy-dark);
+    margin-bottom: 4px;
+  }
+
+  .filtro-row input, .filtro-row select {
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    font-size: 0.85rem;
+  }
+
+  .filtro-botones { display: flex; gap: 8px; }
+
+  .filtro-botones button {
+    padding: 8px 14px;
+    border: none;
+    background: var(--navy);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .filtro-botones button.secondary {
+    background: #fff;
+    color: var(--navy-dark);
+    border: 1px solid var(--line);
+  }
+
+  #notifBanner {
+    background: #fff6e0;
+    border: 1px solid #d9a441;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+
+  .notif-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eddba3;
+    font-size: 0.85rem;
+  }
+
+  .notif-item:last-child { border-bottom: none; }
+
+  .notif-item button {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    background: #d9a441;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
 </style>
 </head>
 <body>
@@ -438,6 +507,8 @@
       <button class="btn-logout" id="btnLogout">Salir</button>
     </div>
   </div>
+
+  <div id="notifBanner" style="display:none"></div>
 
 
   <form id="regForm">
@@ -526,6 +597,27 @@
     <div class="status" id="status"></div>
   </form>
 
+  <div id="filtroPanel" style="display:none">
+    <div class="filtro-row">
+      <div>
+        <label>Fecha</label>
+        <input type="date" id="filtroFecha">
+      </div>
+      <div>
+        <label>Digitador</label>
+        <select id="filtroDigitador"><option value="">Todos</option></select>
+      </div>
+      <div>
+        <label>Turno</label>
+        <select id="filtroTurno"><option value="">Todos</option></select>
+      </div>
+      <div class="filtro-botones">
+        <button type="button" id="btnFiltrar">Filtrar</button>
+        <button type="button" class="secondary" id="btnLimpiarFiltro">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="search-bar">
     <input type="text" id="buscar" placeholder="Buscar por lote, ítem, digitador...">
     <button type="button" id="btnBuscar">Buscar</button>
@@ -561,6 +653,7 @@
       <select id="nuevoRol">
         <option value="digitador">Digitador</option>
         <option value="supervisor">Supervisor</option>
+        <option value="jefe">Jefe</option>
         <option value="admin">Administrador</option>
       </select>
 
@@ -634,7 +727,6 @@
 </div>
 
 <script>
-  // Pega aquí la URL de tu Web App de Apps Script (termina en /exec)
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx976HeNiiaAfsPDZ-RQvGrjB5oSw-q1ZoDU4zT76aEkwzwSroF8065TD-2mXaY0F8UKg/exec";
 
   const form = document.getElementById('regForm');
@@ -643,7 +735,6 @@
   const tbody = document.getElementById('tbodyResultados');
   const inputBuscar = document.getElementById('buscar');
 
-  // --- Login ---
   const loginScreen = document.getElementById('loginScreen');
   const appContent = document.getElementById('appContent');
   const loginForm = document.getElementById('loginForm');
@@ -690,9 +781,17 @@
         document.getElementById('btnOpciones').style.display =
           rolActual === 'admin' ? 'inline-block' : 'none';
 
-        form.style.display = rolActual === 'admin' ? 'none' : 'block';
+        form.style.display = (rolActual === 'admin' || rolActual === 'jefe') ? 'none' : 'block';
+
+        document.getElementById('filtroPanel').style.display = rolActual === 'jefe' ? 'block' : 'none';
+
+        if (rolActual === 'jefe') {
+          cargarDigitadoresParaFiltro();
+          cargarTurnosParaFiltro();
+        }
 
         cargarOpcionesSelects();
+        cargarNotificaciones();
         mostrarMensajeInicial();
       } else {
         loginError.textContent = 'Usuario o contraseña incorrectos.';
@@ -749,10 +848,15 @@
     }
   });
 
-  async function cargarResultados(q) {
+  function mostrarMensajeInicial() {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty-msg">Escribe un término (o usa los filtros) y presiona "Buscar" / "Filtrar" para ver resultados.</td></tr>';
+  }
+
+  async function buscarRegistros(params) {
     tbody.innerHTML = '<tr><td colspan="12" class="empty-msg">Cargando...</td></tr>';
     try {
-      const res = await fetch(`${SCRIPT_URL}?q=${encodeURIComponent(q)}`);
+      const qs = new URLSearchParams(params).toString();
+      const res = await fetch(`${SCRIPT_URL}?${qs}`);
       const filas = await res.json();
 
       if (!filas.length) {
@@ -760,14 +864,16 @@
         return;
       }
 
-      // Cada fila viene como: [id, fecha, digitador, turno, item, talla, libras, cantidad, lote, autorizado, motivo, observacion]
       tbody.innerHTML = filas.map(f => `
         <tr>
           <td>${f[1] ?? ''}</td><td>${f[2] ?? ''}</td><td>${f[3] ?? ''}</td>
           <td>${f[4] ?? ''}</td><td>${f[5] ?? ''}</td><td>${f[6] ?? ''}</td>
           <td>${f[7] ?? ''}</td><td>${f[8] ?? ''}</td><td>${f[9] ?? ''}</td>
           <td>${f[10] ?? ''}</td><td>${f[11] ?? ''}</td>
-          <td>${rolActual === 'admin' ? `<button type="button" class="btn-mini danger" onclick="eliminarRegistro('${f[0]}')">Eliminar</button>` : ''}</td>
+          <td>
+            ${rolActual === 'admin' ? `<button type="button" class="btn-mini danger" onclick="eliminarRegistro('${f[0]}')">Eliminar</button>` : ''}
+            ${rolActual === 'jefe' ? `<button type="button" class="btn-mini" onclick="enviarNotificacionDesdeRegistro('${f[2]}', '${f[0]}')">Notificar</button>` : ''}
+          </td>
         </tr>
       `).join('');
     } catch (err) {
@@ -794,7 +900,7 @@
       if (data.ok) {
         const termino = inputBuscar.value.trim();
         if (termino) {
-          cargarResultados(termino);
+          buscarRegistros({ q: termino });
         } else {
           mostrarMensajeInicial();
         }
@@ -806,17 +912,13 @@
     }
   }
 
-  function mostrarMensajeInicial() {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty-msg">Escribe un término y presiona "Buscar" para ver resultados.</td></tr>';
-  }
-
   document.getElementById('btnBuscar').addEventListener('click', () => {
     const termino = inputBuscar.value.trim();
     if (!termino) {
       mostrarMensajeInicial();
       return;
     }
-    cargarResultados(termino);
+    buscarRegistros({ q: termino });
   });
 
   document.getElementById('btnNuevaBusqueda').addEventListener('click', () => {
@@ -824,7 +926,61 @@
     mostrarMensajeInicial();
   });
 
-  // --- Administrar usuarios (solo admin) ---
+  document.getElementById('btnFiltrar').addEventListener('click', () => {
+    const params = {};
+    const fecha = document.getElementById('filtroFecha').value;
+    const digitador = document.getElementById('filtroDigitador').value;
+    const turno = document.getElementById('filtroTurno').value;
+
+    if (fecha) params.fecha = fecha;
+    if (digitador) params.digitador = digitador;
+    if (turno) params.turno = turno;
+
+    if (!Object.keys(params).length) {
+      mostrarMensajeInicial();
+      return;
+    }
+    buscarRegistros(params);
+  });
+
+  document.getElementById('btnLimpiarFiltro').addEventListener('click', () => {
+    document.getElementById('filtroFecha').value = '';
+    document.getElementById('filtroDigitador').value = '';
+    document.getElementById('filtroTurno').value = '';
+    mostrarMensajeInicial();
+  });
+
+  async function cargarDigitadoresParaFiltro() {
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'listarUsuarios',
+          adminUsuario: usuarioActual,
+          adminContrasena: contrasenaActual
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) return;
+
+      const select = document.getElementById('filtroDigitador');
+      const digitadores = data.usuarios.filter(u => u.rol.toLowerCase() === 'digitador');
+      select.innerHTML = '<option value="">Todos</option>' +
+        digitadores.map(u => `<option value="${u.usuario}">${u.usuario}</option>`).join('');
+    } catch (err) {}
+  }
+
+  async function cargarTurnosParaFiltro() {
+    try {
+      const res = await fetch(`${SCRIPT_URL}?opciones=1`);
+      const datos = await res.json();
+      const select = document.getElementById('filtroTurno');
+      select.innerHTML = '<option value="">Todos</option>' +
+        (datos.turno || []).map(v => `<option value="${v}">${v}</option>`).join('');
+    } catch (err) {}
+  }
+
   const adminModal = document.getElementById('adminModal');
   const formNuevoUsuario = document.getElementById('formNuevoUsuario');
   const adminMsg = document.getElementById('adminMsg');
@@ -963,7 +1119,6 @@
     }
   });
 
-  // --- Cambiar mi propia contraseña ---
   const passModal = document.getElementById('passModal');
   const formCambiarPass = document.getElementById('formCambiarPass');
   const passMsg = document.getElementById('passMsg');
@@ -1020,7 +1175,6 @@
     }
   });
 
-  // --- Opciones dinámicas de listas (Turno, Talla, Libras, Autorizado, Motivo) ---
   function llenarSelect(id, valores) {
     if (!valores || !valores.length) return;
     const select = document.getElementById(id);
@@ -1039,9 +1193,7 @@
       llenarSelect('libras', datos.libras);
       llenarSelect('autorizado', datos.autorizado);
       llenarSelect('motivo', datos.motivo);
-    } catch (err) {
-      // si falla, se quedan las opciones que ya estén escritas en el HTML
-    }
+    } catch (err) {}
   }
 
   const opcionesModal = document.getElementById('opcionesModal');
@@ -1144,6 +1296,66 @@
       }
     } catch (err) {
       alert('Error de conexión al eliminar.');
+    }
+  }
+
+  async function enviarNotificacionDesdeRegistro(destinatario, registroId) {
+    const mensaje = prompt(`Mensaje para "${destinatario}" sobre este registro:`);
+    if (!mensaje) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'enviarNotificacion',
+          jefeUsuario: usuarioActual,
+          jefeContrasena: contrasenaActual,
+          destinatario,
+          mensaje,
+          registroId
+        })
+      });
+      const data = await res.json();
+      alert(data.ok ? 'Notificación enviada.' : (data.error || 'No se pudo enviar.'));
+    } catch (err) {
+      alert('Error de conexión al enviar la notificación.');
+    }
+  }
+
+  const notifBanner = document.getElementById('notifBanner');
+
+  async function cargarNotificaciones() {
+    try {
+      const res = await fetch(`${SCRIPT_URL}?notificaciones=${encodeURIComponent(usuarioActual)}`);
+      const data = await res.json();
+
+      if (!data.ok || !data.notificaciones.length) {
+        notifBanner.style.display = 'none';
+        return;
+      }
+
+      notifBanner.style.display = 'block';
+      notifBanner.innerHTML = `<strong>Tienes ${data.notificaciones.length} novedad(es):</strong>` +
+        data.notificaciones.map(n => `
+          <div class="notif-item">
+            <span>${n.mensaje}</span>
+            <button type="button" onclick="marcarNotificacionLeida('${n.id}')">Entendido</button>
+          </div>
+        `).join('');
+    } catch (err) {}
+  }
+
+  async function marcarNotificacionLeida(id) {
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'marcarNotificacionLeida', id })
+      });
+      cargarNotificaciones();
+    } catch (err) {
+      alert('Error de conexión al marcar la notificación.');
     }
   }
 </script>
